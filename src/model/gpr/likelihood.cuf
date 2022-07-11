@@ -1,0 +1,49 @@
+module culinalg
+  use kinds, only: wp
+  use omp_lib, only: omp_get_thread_num
+  use cublas
+  use cusolverDn
+  use cudafor
+  implicit none
+  private
+  public :: cudpotrf
+
+contains
+
+  attributes(global) &
+  subroutine cudpotrf(R, info)
+    real(kind=wp), dimension(:,:), intent(inout) :: R
+    integer, intent(out) :: info
+
+    integer :: ntrain, thread
+
+    real(kind=wp), device :: R_d(n,n)
+    real(kind=wp), device, allocatable :: workspace_d(:)
+    integer, device :: devInfo_d
+    integer :: istat, Lwork
+    type(cusolverDnHandle) :: h
+
+    ntrain = size(R, 1)
+
+    !> potrf = Cholesky decomposition
+    thread = omp_get_thread_num() + 2
+    
+    istat = cusolverDnCreate(h)
+    if (istat /= CUSOLVER_STATUS_SUCCESS) write(*,*) 'handle creation failed'
+
+    istat = cusolverDnDpotrf_bufferSize(h, CUBLAS_FILL_MODE_LOWER, ntrain, a_d, ntrain, Lwork)
+    if (istat /= CUSOLVER_STATUS_SUCCESS) write(*,*) 'cusolverDnDpotrf_buffersize failed'
+
+    allocate(workspace_d(Lwork))
+    istat = cusolverDnDpotrf(h, CUBLAS_FILL_MODE_LOWER, ntrain, a_d, ntrain, workspace_d, Lwork, devInfo_d)
+    if (istat /= CUSOLVER_STATUS_SUCCESS) write(*,*) 'cusolverDnDpotrf failed'
+
+    istat = devInfo_d
+    if (istat /= 0) write(*,*) 'Cholesky factorization failed'
+    info = istat
+
+    istat = cusolverDnDestroy(h)
+    if (istat /= CUSOLVER_STATUS_SUCCESS) write(*,*) 'handle destruction failed'
+  end subroutine cudpotrf
+
+end module culinalg

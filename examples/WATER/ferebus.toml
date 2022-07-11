@@ -1,0 +1,23 @@
+[system]
+name = "WATER"
+natoms = 3
+atoms = [{name="O1", alf=[1, 2, 3]}]
+properties = ["iqa"]
+
+[model]
+mean = "constant"
+optimiser = "pso"
+kernel = "k1+k2"
+
+[optimiser.pso]
+swarm_size = 20
+iterations = 1
+inertia_weight = 0.789
+cognitive_learning_rate = 1.494
+social_learning_rate = 1.494
+
+[kernels.k1]
+type = "rbf"
+
+[kernels.k2]
+type = "rbf"
