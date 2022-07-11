@@ -1,48 +1,68 @@
-# Good resource for making fortran cmake project:
-# https://github.com/coderefinery/lessons/blob/master/cmake-basics.mkd
+# MIT License
+#
+# Copyright (c) 2022 Popelier Group
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 cmake_minimum_required(VERSION 3.5)
 
-# set the project name
 project(ferebus VERSION 7.0.0)
 enable_language(Fortran)
 
-# Add our local modlues to the module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-# Uncomment if it is required that Fortran 90 is supported
 if(NOT CMAKE_Fortran_COMPILER_SUPPORTS_F90)
    message(FATAL_ERROR "Fortran compiler does not support F90")
 endif()
 
-# Set some options the user may choose
-# Uncomment the below if you want the user to choose a parallelization library
 option(USE_MPI "Use the MPI library for parallelization" OFF)
 option(USE_OPENMP "Use OpenMP for parallelization" ON)
 option(EXTERNAL_BLAS "External BLAS/LAPACK" ON)
 
-# configure_file(src/version.f90.in src/version.f90 @ONLY)
-
 include(ExternalProject)
 set(lib-deps)
 
-# This INCLUDE statement executes code that sets the compile flags for DEBUG,
-# RELEASE, and PROFILE. You should review this file and make sure the flags
-# are to your liking.
-#include(BuildFlags)
-
-# Locate and set parallelization libraries.  There are some CMake peculiarities
-# taken care of here, such as the fact that the FindOpenMP routine doesn't know
-# about Fortran.
-#include(SetParallelizationLibrary)
-
-#set(CMAKE_Fortran_FLAGS "-Ofast -unroll -fopenmp -fpp -msse4.2 -axCORE-AVX512,CORE-AVX2,AVX")
-
 if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
-   # set(CMAKE_Fortran_FLAGS "-p -g -fopenmp -fpp -traceback")
    set(CMAKE_Fortran_FLAGS "-Ofast -unroll -fopenmp -fpp -msse4.2 -axCORE-AVX512,CORE-AVX2,AVX")
 elseif(${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
    set(CMAKE_Fortran_FLAGS "-Ofast -unroll -openmp -cpp")
+endif()
+
+if(CMAKE_Fortran_COMPILER_ID MATCHES Intel)
+    set(CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} -warn all -fopenmp")
+    set(CMAKE_Fortran_FLAGS_DEBUG   "-g -traceback")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-Ofast -unroll -fpp -msse4.2 -axCORE-AVX512,CORE-AVX2,AVX")
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} ${CMAKE_Fortran_FLAGS_DEBUG}")
+endif()
+
+if(CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+    set(CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} -Wall -fopenmp")
+    set(CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g3")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-Ofast -march=native")
+endif()
+
+if(CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC)
+    add_compile_definitions(__PGI__)
+    set(CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} -fPIC -mp -acc -Mfree -Mfreeform -Mpreprocess -gpu=cuda11.6 -cudalib=cublas,cusolver")
+    set(CMAKE_Fortran_FLAGS_DEBUG   "-O0 -pg")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fast -tp=px")
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -pg")
 endif()
 
 # Setup the LAPACK libraries.
@@ -55,9 +75,6 @@ if(FCNAME STREQUAL "pgf90")
 endif(FCNAME STREQUAL "pgf90")
 
 message("Fortran compiler flags: ${CMAKE_Fortran_FLAGS}")
-# list(APPEND flags "-Ofast" "-unroll" "-fopenmp" "-fpp" "-msse4.2" "-axCORE-AVX512,CORE-AVX2,AVX")
-
-# "–Qoption,fpp,'-DVERSION={VERSION}'"
 
 set(srcs)
 add_subdirectory("src")
@@ -67,7 +84,6 @@ set(FEREBUS_SRCS ${srcs})
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
-#target_compile_options(ferebus PRIVATE ${flags})
 add_executable(ferebus ${FEREBUS_SRCS})
 
 ExternalProject_Add(toml-f
@@ -121,7 +137,5 @@ else()
   include_directories(${lapack-dir}/include)
   list(APPEND lib-deps lapack-lib)
 endif()
-
-# message(FATAL_ERROR ${lib-deps})
 
 target_link_libraries(ferebus ${lib-deps})

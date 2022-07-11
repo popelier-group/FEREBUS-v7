@@ -1,3 +1,25 @@
+! MIT License
+!
+! Copyright (c) 2022 Popelier Group
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+! SOFTWARE.
+
 module stationary_kernel_module
   use kinds, only: wp
   use kernels_module, only: Kernel
@@ -15,7 +37,6 @@ module stationary_kernel_module
   contains
     private
     procedure(k_diff_interface), public, deferred, pass(self) :: k_diff
-    ! procedure, public, pass(self) :: compute_distance_matrix
     procedure, public, pass(self) :: R => R_stationary
     procedure, public, pass(self) :: r2
     procedure, public, pass(self) :: cleanup => cleanup_stationary
@@ -35,7 +56,6 @@ contains
   subroutine cleanup_stationary(self)
     class(StationaryKernel), intent(inout) :: self
 
-    !!$acc exit data delete(self, self%lengthscale)
     !$acc exit data delete(distance_matrix)
   end subroutine cleanup_stationary
 
@@ -45,7 +65,6 @@ contains
     real(kind=wp), dimension(:), intent(in) :: diff2
     real(kind=wp) :: r2
     r2 = sum(self%lengthscale*diff2)
-    ! r2 = sum(1.0_wp/(self%lengthscale*self%lengthscale)*diff2)
   end function r2
 
 #if defined(__PGI__)
@@ -66,18 +85,12 @@ contains
 
     thread = omp_get_thread_num() + 2
 
-    !!$acc update device(self, self%lengthscale) async(thread)
-    !!$acc data copy(R) async(thread)
-
     !$acc data copy(R) copyin(lengthscale) async(thread)
     !$acc wait(1)
     !$acc parallel loop collapse(2) async(thread)
     do j = 1, ntrain
       do i = 1, ntrain
-        ! R(j, i) = self%k_diff(self%distance_matrix(j, i, :))
         R(i, j) = exp(-0.5_wp*sum(lengthscale * distance_matrix(:, i, j)))
-        ! R(i,j) = self%distance_matrix(i, i, j)
-        ! R(i, j) = exp(tmp(i, j))
       end do
     end do
     !$acc end parallel
@@ -95,8 +108,6 @@ contains
     ntrain = size(x,1)
     nfeats = size(x,2)
 
-    ! print*, distance_matrix(self%active_dims, 2, 1)
-
     if (size(self%active_dims) .eq. nfeats) then
       call dgemv('t', nfeats, ntrain*ntrain, -0.5_wp, distance_matrix, nfeats, self%lengthscale, 1, 0.0_wp, R, 1)
     else
@@ -107,7 +118,7 @@ contains
       call dgemv('t', size(self%active_dims), ntrain*ntrain, -0.5_wp, dm, size(self%active_dims), self%lengthscale, 1, 0.0_wp, R, 1)
       deallocate(dm)
     end if
-    R = exp(R) ! <- maybe
+    R = exp(R)
   end subroutine R_stationary
 #endif
 end module stationary_kernel_module

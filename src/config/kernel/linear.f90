@@ -20,36 +20,37 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 
-module periodic_config_module
-    use stationary_kernel_config_module, only: StationaryKernelConfig
+module linear_config_module
     use tomlf, only: toml_table
     use utils, only: get_value_converted
+    use kernel_config_type_module, only: KernelConfig
     use config_error, only: error_data
   
     implicit none
     private
-    public :: PeriodicConfig
+    public :: LinearConfig
   
-    type, extends(StationaryKernelConfig) :: PeriodicConfig
+    type, extends(KernelConfig) :: LinearConfig
+      real(kind=wp), allocatable, dimension(:) :: c
     contains
       private
-      procedure, public, pass(self) :: init => init_per_config
-      procedure, public, pass(self) :: info => info_per
-    end type PeriodicConfig
+      procedure, public, pass(self) :: init => init_lin_config
+      procedure, public, pass(self) :: info => info_lin
+    end type LinearConfig
   
   contains
   
-    subroutine init_per_config(self, table, error)
-      class(PeriodicConfig), intent(inout) :: self
+    subroutine init_lin_config(self, table, error)
+      class(LinearConfig), intent(inout) :: self
       type(toml_table), intent(inout) :: table
       type(error_data), allocatable, intent(out) :: error
   
       call table%get_key(self%name)
       call get_value_converted(table, "active_dimensions", self%active_dims)
-      call get_value_converted(table, "lengthscale", self%lengthscale)
-    end subroutine init_per_config
+      call get_value_converted(table, "c", self%c)
+    end subroutine init_lin_config
   
-    subroutine info_per(self, unit)
+    subroutine info_lin(self, unit)
       class(PeriodicConfig), intent(in) :: self
       integer, intent(in) :: unit
       integer :: i
@@ -60,7 +61,7 @@ module periodic_config_module
         write(unit, '(" - ", A, T30, (*(I0, 1x)))') "Active Dimensions", (self%active_dims(i), i=1,size(self%active_dims))
       end if
       if (allocated(self%lengthscale)) then
-        write(unit, '(" - ", A, T30, (*(G0, 1x)))') "Lengthscale", (self%lengthscale(i), i=1,size(self%lengthscale))
+        write(unit, '(" - ", A, T30, (*(G0, 1x)))') "C", (self%lengthscale(i), i=1,size(self%c))
       end if
-    end subroutine info_per
-end module periodic_config_module
+    end subroutine info_lin
+end module linear_config_module

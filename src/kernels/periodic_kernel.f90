@@ -1,9 +1,29 @@
+! MIT License
+!
+! Copyright (c) 2022 Popelier Group
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+! SOFTWARE.
+
 module periodic_kernel_module
     use kinds, only: wp
     use stationary_kernel_module, only: StationaryKernel
-    use kernels_module, only: Kernel
     use kernel_config_module, only: PeriodicConfig, KernelConfig
-    use utils, only: fmt_str, print_matrix
     use distance_matrix_module, only: periodic_distance_matrix_required, periodic_distance_matrix
     use constants, only: PI, TWOPI
     implicit none
@@ -17,7 +37,7 @@ module periodic_kernel_module
       procedure, public, pass(self) :: k => k_per
       procedure, public, pass(self) :: g => g_per
       procedure, public, pass(self) :: R => R_per
-      procedure, public, pass(self) :: k_diff => k_diff_per !> TODO: Maybe turn this into interface so that only k needs to be called
+      procedure, public, pass(self) :: k_diff => k_diff_per
       procedure, public, pass(self) :: get_params => get_params_per
       procedure, public, pass(self) :: set_params => set_params_per
       procedure, public, pass(self) :: nparams => nparams_per
@@ -76,12 +96,8 @@ module periodic_kernel_module
       real(kind=wp), dimension(:), allocatable :: g
       real(kind=wp), dimension(:), allocatable :: diff
   
-      ! todo: fix this
-
-      diff = xi - xj
-      diff = self%lengthscale*diff*diff
-  
-      g = diff * exp(-0.5*sum(diff))
+      print*, "Not Implemented Gradient for Periodic Kernel"
+      stop
     end function g_per
   
     function get_params_per(self) result(params)
@@ -149,18 +165,12 @@ module periodic_kernel_module
 
     thread = omp_get_thread_num() + 2
 
-    !!$acc update device(self, self%lengthscale) async(thread)
-    !!$acc data copy(R) async(thread)
-
     !$acc data copy(R) copyin(lengthscale) async(thread)
     !$acc wait(1)
     !$acc parallel loop collapse(2) async(thread)
     do j = 1, ntrain
       do i = 1, ntrain
-        ! R(j, i) = self%k_diff(self%distance_matrix(j, i, :))
         R(i, j) = exp(-0.5_wp*sum(lengthscale * distance_matrix(:, i, j)))
-        ! R(i,j) = self%distance_matrix(i, i, j)
-        ! R(i, j) = exp(tmp(i, j))
       end do
     end do
     !$acc end parallel

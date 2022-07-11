@@ -1,6 +1,27 @@
+! MIT License
+!
+! Copyright (c) 2022 Popelier Group
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+! SOFTWARE.
+
 module optimiser_pso_particle
   use kinds, only: wp
-  ! use optimiser_type, only: Optimisable
   use gpr_module, only: GaussianProcessRegressor
   use optimiser_iter_result, only: IterResult
   use utils, only: random
@@ -28,48 +49,6 @@ module optimiser_pso_particle
   end type Particle
 
 contains
-
-  ! recursive subroutine init_particle(self, id, op, nfeatures, search_min, search_max, result) 
-  !   type(Particle), intent(inout) :: self
-  !   integer, intent(in) :: id
-  !   type(GaussianProcessRegressor), intent(inout) :: op
-  !   integer, intent(in) :: nfeatures
-  !   real(kind=wp), intent(in) :: search_min
-  !   real(kind=wp), intent(in) :: search_max
-  !   type(IterResult), allocatable, intent(inout) :: result
-
-  !   real(kind=wp), dimension(:), allocatable :: delta, min_delta
-  !   type(IterResult), allocatable :: particle_result
-
-  !   self%id = id
-
-  !   if (.not.allocated(delta)) allocate(delta(nfeatures))
-  !   delta = search_max - search_min
-  !   if (.not.allocated(min_delta)) allocate(min_delta(nfeatures))
-  !   min_delta = -delta
-
-  !   self%min = search_min
-  !   self%max = search_max
-
-  !   if (.not.allocated(self%velocity)) allocate(self%velocity(nfeatures))
-  !   call random(self%position, nfeatures, self%min, self%max)
-
-  !   result = op%cost_function(self%position)
-
-  !   do while (result%success .neqv. .true.)
-  !     call reinitialise(self, op, result)
-  !   end do
-
-  !   self%cost = result%cost
-
-  !   !> TODO: Need to fix this for reentry
-  !   self%best_cost = result%cost
-  !   self%best_position = self%position
-
-  !   !> May need to look at a better initialisation of velocity
-  !   !> This initialisation can escape the bounds in the first iteration
-  !   call random(self%velocity, nfeatures, min_delta, delta)
-  ! end subroutine init_particle
 
   recursive subroutine init_particle(self, id, op, position, velocity, search_min, search_max, result) 
     type(Particle), intent(inout) :: self
@@ -181,14 +160,5 @@ contains
       end if
     end do
   end function get_cost
-
-  !> Causes ICE in gcc 9.2.0
-  ! subroutine destructor(self)
-  !   type(Particle), intent(inout) :: self
-
-  !   if (allocated(self%position)) deallocate(self%position)
-  !   if (allocated(self%velocity)) deallocate(self%velocity)
-  !   if (allocated(self%best_position)) deallocate(self%best_position)
-  ! end subroutine destructor
 
 end module optimiser_pso_particle

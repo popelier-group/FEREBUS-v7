@@ -1,4 +1,25 @@
-!> Implementation of the config meta data storage
+! MIT License
+!
+! Copyright (c) 2022 Popelier Group
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+! SOFTWARE.
+
 module config_module
   use, intrinsic :: iso_fortran_env, only : error_unit, output_unit
   use config_type_module, only: ConfigType
@@ -26,7 +47,8 @@ module config_module
   use pso_swarm_updater_config_module, only: ParticleSwarmSwarmUpdaterConfig, &
                                              GlobalParticleSwarmConfig, &
                                              ForcedParticleSwarmConfig
-  use kernel_config_module, only: KernelConfig, RBFConfig, RBFCyclicConfig, KernelConfigList, PeriodicConfig
+  use kernel_config_module, only: KernelConfig, RBFConfig, RBFCyclicConfig, KernelConfigList, &
+                                  PeriodicConfig, LinearConfig
   use notes_module, only: Note
   use tomlf
   use tomlf_type, only : len
@@ -37,7 +59,7 @@ module config_module
   public :: Config, error_data, SlicedConfig
   public :: MeanConfig, ConstantMeanConfig, ZeroMeanConfig, LinearMeanConfig, QuadraticMeanConfig
   public :: OptimiserConfig
-  public :: RBFConfig, KernelConfig, RBFCyclicConfig
+  public :: RBFConfig, KernelConfig, RBFCyclicConfig, PeriodicConfig, LinearConfig
   public :: ParticleSwarmConfig, &
             RelativeChangeStoppingCriteriaConfig, &
             NoStoppingCriteriaConfig, &
@@ -156,6 +178,8 @@ contains
           allocate(RBFCyclicConfig :: kernel_config)
         case ("periodic")
           allocate(PeriodicConfig :: kernel_config)
+        case ("linear")
+          allocate(LinearConfig :: kernel_config)
       end select
       call kernel_config%init(kernel, error)
 
