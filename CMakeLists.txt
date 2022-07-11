@@ -114,7 +114,9 @@ if (EXTERNAL_BLAS)
   endif()
 
   target_link_libraries(ferebus ${LAPACK_LIBRARIES})
-else()
+endif()
+
+if (NOT EXTERNAL_BLAS)
   message(STATUS "LAPACK not found using internal lapack")
 
   set(BLAS_LIBRARIES "")
