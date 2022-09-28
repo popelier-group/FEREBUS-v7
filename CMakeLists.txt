@@ -88,7 +88,7 @@ add_executable(ferebus ${FEREBUS_SRCS})
 
 ExternalProject_Add(toml-f
   GIT_REPOSITORY https://github.com/toml-f/toml-f.git
-  GIT_TAG main
+  GIT_TAG v0.2.3
   GIT_SHALLOW ON
   GIT_PROGRESS true
 

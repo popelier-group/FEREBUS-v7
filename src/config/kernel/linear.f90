@@ -21,6 +21,7 @@
 ! SOFTWARE.
 
 module linear_config_module
+    use kinds, only: wp
     use tomlf, only: toml_table
     use utils, only: get_value_converted
     use kernel_config_type_module, only: KernelConfig
@@ -51,7 +52,7 @@ module linear_config_module
     end subroutine init_lin_config
   
     subroutine info_lin(self, unit)
-      class(PeriodicConfig), intent(in) :: self
+      class(LinearConfig), intent(in) :: self
       integer, intent(in) :: unit
       integer :: i
   
@@ -60,8 +61,8 @@ module linear_config_module
       if (allocated(self%active_dims)) then
         write(unit, '(" - ", A, T30, (*(I0, 1x)))') "Active Dimensions", (self%active_dims(i), i=1,size(self%active_dims))
       end if
-      if (allocated(self%lengthscale)) then
-        write(unit, '(" - ", A, T30, (*(G0, 1x)))') "C", (self%lengthscale(i), i=1,size(self%c))
+      if (allocated(self%c)) then
+        write(unit, '(" - ", A, T30, (*(G0, 1x)))') "C", (self%c(i), i=1,size(self%c))
       end if
     end subroutine info_lin
 end module linear_config_module
