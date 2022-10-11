@@ -33,17 +33,19 @@ module ast_module
                           RParenToken,  &
                           IdToken,      &
                           EofToken
-  use kernels, only: Kernel,       &
-                      RBF,         &
-                      RBFCyclic,   &
-                      Constant,    &
+  use kernels, only: Kernel,          &
+                      RBF,            &
+                      RBFCyclic,      &
+                      Constant,       &
                       PeriodicKernel, &
-                      add_kernels, &
+                      LinearKernel,   &
+                      add_kernels,    &
                       mult_kernels
   use kernel_config_module, only: KernelConfig,    &
                                   RBFConfig,       &
                                   RBFCyclicConfig, &
-                                  PeriodicConfig, &
+                                  PeriodicConfig,  &
+                                  LinearConfig,    &
                                   KernelConfigList
 
   implicit none
@@ -230,12 +232,6 @@ contains
 
     select type(t => self%var)
       type is  (IdToken)
-        ! select type (kc => global_state%get_name(t%value))
-        !   type is (RBFConfig)
-        !     k = RBF(kc)
-        !   type is (RBFCyclicConfig)
-        !     k = RBFCyclic(kc)
-        ! end select
         select type (kc => global_state%get_name(t%value))
           type is (RBFConfig)
             allocate(RBF :: k)
@@ -243,6 +239,8 @@ contains
             allocate(RBFCyclic :: k)
           type is (PeriodicConfig)
             allocate(PeriodicKernel :: k)
+          type is (LinearConfig)
+            allocate(LinearKernel :: k)
         end select
         call k%init(global_state%get_name(t%value))
     end select

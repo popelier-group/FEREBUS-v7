@@ -165,8 +165,8 @@ contains
     integer :: i
     allocate(mat(n,m))
     call random_number(mat)
-    do i = 1, n
-      mat(i,:) = min + mat(i,:)*(max-min)
+    do i = 1, m
+      mat(:,i) = min + mat(i,:)*(max-min)
     end do
   end subroutine random_mat_min_max_arr
 

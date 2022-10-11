@@ -26,21 +26,21 @@ module linear_kernel_module
     use kernel_config_module, only: LinearConfig, KernelConfig
     implicit none
     private
-    public :: PeriodicKernel
+    public :: LinearKernel
   
     type, extends(Kernel) :: LinearKernel
         real(kind=wp), allocatable, dimension(:) :: c
+        real(kind=wp) :: order = 0.0_wp
     contains
       private
       procedure, public, pass(self) :: init => init_lin
       procedure, public, pass(self) :: k => k_lin
       procedure, public, pass(self) :: g => g_lin
-      procedure, public, pass(self) :: R => R_lin
-      procedure, public, pass(self) :: k_diff => k_diff_lin
       procedure, public, pass(self) :: get_params => get_params_lin
       procedure, public, pass(self) :: set_params => set_params_lin
       procedure, public, pass(self) :: nparams => nparams_lin
       procedure, public, pass(self) :: write => write_lin
+      procedure, public, pass(self) :: cleanup => cleanup_lin
     end type LinearKernel
   
   contains
@@ -71,19 +71,16 @@ module linear_kernel_module
       class(LinearKernel), intent(in) :: self
       real(kind=wp), dimension(:), intent(in) :: xi, xj
       real(kind=wp) :: k
-  
-      k = 0.0_wp
-      do i = 1, self%ndim
-        k = k + self%c(i)*xi(self%active_dims(i))*xj(self%active_dims(i))
-      end do
+
+      k = sum(((xi(self%active_dims)*xj(self%active_dims))**self%order)/self%c)
     end function k_lin
-  
+
     function g_lin(self, xi, xj) result(g)
       class(LinearKernel), intent(in) :: self
       real(kind=wp), dimension(:), intent(in) :: xi, xj
       real(kind=wp), dimension(:), allocatable :: g
   
-      allocate(g(self%ndims))
+      allocate(g(self%ndim))
       g = 0.0_wp
     end function g_lin
   
@@ -91,7 +88,7 @@ module linear_kernel_module
       class(LinearKernel), intent(in) :: self
       real(kind=wp), dimension(:), allocatable :: params
   
-      allocate(params, source=self%c)
+      allocate(params, source=-log(self%c))
     end function get_params_lin
   
     subroutine set_params_lin(self, params)
@@ -99,7 +96,7 @@ module linear_kernel_module
       real(kind=wp), dimension(:), intent(in) :: params
   
       if (.not.allocated(self%c)) allocate(self%c(size(params)))
-      self%c = params
+      self%c = exp(-params)
     end subroutine set_params_lin
   
     function nparams_lin(self) result(nparams)
@@ -124,10 +121,13 @@ module linear_kernel_module
       write(unit, "(A, 1x, A)") "type", "linear"
       write(unit, "(A, 1x, I0)") "number_of_dimensions", nparams
       write(unit, trim(ifmt)) "active_dimensions", self%active_dims
+      write(unit, "(A, 1x, G0)") "order", self%order
       write(unit, trim(fmt)) "c", self%c
-  
-      deallocate(params)
     end subroutine write_lin
+
+    subroutine cleanup_lin(self)
+      class(LinearKernel), intent(inout) :: self
+    end subroutine cleanup_lin
 
 end module linear_kernel_module
   

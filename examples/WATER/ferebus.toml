@@ -7,7 +7,7 @@ properties = ["iqa"]
 [model]
 mean = "constant"
 optimiser = "pso"
-kernel = "k1+k2"
+kernel = "k1*k2"
 
 [optimiser.pso]
 swarm_size = 20
@@ -20,4 +20,5 @@ social_learning_rate = 1.494
 type = "rbf"
 
 [kernels.k2]
-type = "rbf"
+type = "periodic"
+active_dimensions = [3]

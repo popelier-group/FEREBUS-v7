@@ -32,6 +32,7 @@ list(
   "${dir}/rbf_cyclic_kernel.f90"
   "${dir}/distance_matrix.f90"
   "${dir}/periodic_kernel.f90"
+  "${dir}/linear_kernel.f90"
 )
 
 set(srcs "${srcs}" PARENT_SCOPE)

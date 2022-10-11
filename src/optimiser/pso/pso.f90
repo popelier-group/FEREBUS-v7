@@ -26,7 +26,7 @@ module optimiser_pso_module
   use gpr_module, only: GaussianProcessRegressor
   use optimiser_pso_particle, only: Particle, init_particle
   use optimiser_iter_result, only: IterResult
-  use utils, only: random, euclidean_distance
+  use utils, only: random, euclidean_distance, print_matrix
   use constants, only: INFINITY
   use config_module, only: ParticleSwarmConfig, &
                            NoStoppingCriteriaConfig, &

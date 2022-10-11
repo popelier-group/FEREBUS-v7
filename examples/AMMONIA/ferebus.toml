@@ -1,0 +1,36 @@
+[system]
+name = "AMMONIA"
+natoms = 4
+atoms = [
+  {name="N1", alf=[1, 2, 3]}
+]
+properties = ["iqa"]
+
+[model]
+mean = "constant"
+optimiser = "pso"
+kernel = "k1"
+likelihood = "marginal"
+
+[optimiser]
+search_min = 0.0
+search_max = 3.0
+
+[optimiser.pso]
+swarm_size = 50
+iterations = 1000
+inertia_weight = 0.729
+cognitive_learning_rate = 1.494
+social_learning_rate = 1.494
+stopping_criteria="relative_change"
+
+[optimiser.pso.relative_change]
+tolerance=1e-08
+stall_iterations=50
+
+[kernels.k1]
+type = "rbf"
+
+[notes]
+method = "B3LYP"
+basis-set = "6-31+g(d,p)"

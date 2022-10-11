@@ -211,8 +211,8 @@ contains
     real(kind=wp), dimension(:,:), intent(inout) :: R
     integer :: i, j
 
-    do i = 1, size(x, 1)
-      do j = 1, size(x, 2)
+    do j = 1, size(x, 1)
+      do i = j, size(x, 1)
         R(i, j) = self%k(x(i,:), x(j,:))
       end do
     end do

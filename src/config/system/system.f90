@@ -113,7 +113,11 @@ contains
     end if
   
     if (self%nfeats .eq. -1) then
-      self%nfeats = 3*self%natoms - 6
+      if (self%natoms .gt. 2) then
+        self%nfeats = 3*self%natoms - 6
+      else
+        self%nfeats = 1
+      end if
     end if
   end subroutine init_system_config
   
