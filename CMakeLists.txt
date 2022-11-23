@@ -38,10 +38,15 @@ option(EXTERNAL_BLAS "External BLAS/LAPACK" ON)
 include(ExternalProject)
 set(lib-deps)
 
+EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
+
 if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
-   set(CMAKE_Fortran_FLAGS "-Ofast -unroll -fopenmp -fpp -msse4.2 -axCORE-AVX512,CORE-AVX2,AVX")
+    set(CMAKE_Fortran_FLAGS "-fopenmp -fpp -msse4.2 -axCORE-AVX512,CORE-AVX2,AVX")
 elseif(${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
-   set(CMAKE_Fortran_FLAGS "-Ofast -unroll -openmp -cpp")
+    set(CMAKE_Fortran_FLAGS "-openmp -cpp")
+    if ($ARCHITECTURE STREQUAL "x86_64")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -unroll")
+    endif()
 endif()
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES Intel)
@@ -80,29 +85,37 @@ set(srcs)
 add_subdirectory("src")
 add_subdirectory("app")
 
-set(FEREBUS_SRCS ${srcs})
-
-set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
-
-add_executable(ferebus ${FEREBUS_SRCS})
-
+set(GLOBAL_OUTPUT_PATH ${CMAKE_BINARY_DIR}/build)
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(EXTERNALS_DIR ${CMAKE_BINARY_DIR}/external)
 ExternalProject_Add(toml-f
+  PREFIX ${EXTERNALS_DIR}
   GIT_REPOSITORY https://github.com/toml-f/toml-f.git
   GIT_TAG v0.2.3
   GIT_SHALLOW ON
   GIT_PROGRESS true
+  
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
 
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/subprojects/toml-f
-  BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/toml-f
-  BUILD_COMMAND ${CMAKE_COMMAND} --build .
-  INSTALL_COMMAND ""
-  )
+  SOURCE_DIR "${CMAKE_BINARY_DIR}/toml-f"
+  CMAKE_ARGS -DBuildShared=ON -DBuildExamples=OFF -DCMAKE_INSTALL_PREFIX=${GLOBAL_OUTPUT_PATH}/toml-f
 
-set(toml-f-dir "${CMAKE_CURRENT_BINARY_DIR}/toml-f")
-add_library (toml-f-lib SHARED IMPORTED)
-set_target_properties (toml-f-lib PROPERTIES IMPORTED_LOCATION ${toml-f-dir}/libtoml-f.a)
-include_directories(${toml-f-dir}/include)
-list(APPEND lib-deps toml-f-lib)
+  TEST_COMMAND ""
+)
+
+ExternalProject_Add_Step(
+  toml-f CopyToBin
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${GLOBAL_OUTPUT_PATH}/toml-f/lib ${GLOBAL_OUTPUT_PATH}
+  DEPENDEES install
+)
+
+set(TOML_F_INCLUDE_DIRS "${EXTERNALS_DIR}/src/toml-f-build/include")
+set(TOML_F_LIBRARIES "${CMAKE_SHARED_LIBRARY_PREFIX}toml-f${CMAKE_SHARED_LIBRARY_SUFFIX}")
+include_directories(${TOML_F_INCLUDE_DIRS})
+
+link_directories(${GLOBAL_OUTPUT_PATH})
+#add_dependencies(ferebus toml-f-lib)
 
 if (EXTERNAL_BLAS)
   find_package(PkgConfig REQUIRED)
@@ -113,7 +126,8 @@ if (EXTERNAL_BLAS)
     find_package(LAPACK REQUIRED)
   endif()
 
-  target_link_libraries(ferebus ${LAPACK_LIBRARIES})
+  list(APPEND lib-deps LAPACK)
+  #target_link_libraries(ferebus ${LAPACK_LIBRARIES})
 endif()
 
 if (NOT EXTERNAL_BLAS)
@@ -140,4 +154,8 @@ if (NOT EXTERNAL_BLAS)
   list(APPEND lib-deps lapack-lib)
 endif()
 
-target_link_libraries(ferebus ${lib-deps})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+set(FEREBUS_SRCS ${srcs})
+add_executable(ferebus ${FEREBUS_SRCS})
+target_link_libraries(ferebus ${LAPACK_LIBRARIES} ${TOML_F_LIBRARIES})
