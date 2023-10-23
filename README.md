@@ -2,6 +2,22 @@
 
 FEREBUS v7 is a Gaussian Process Regression engine written in Fortran90 designed to produce models for atomistic simulations. FEREBUS uses Particle Swarm Optimisation accelerated using OpenMP and OpenAcc.
 
+## Download
+
+FEREBUS uses submodules, to download the repository use the following command:
+
+```bash
+git clone --recurse-submodules https://github.com/popelier-group/FEREBUS-v7.git
+```
+
+or if the repository has already been cloned, initialise the submodules with the following:
+
+```bash
+git clone https://github.com/popelier-group/FEREBUS-v7.git
+cd FEREBUS-v7
+git submodule update --init
+```
+
 ## How to Build
 
 FEREBUS requires cmake (at least version 3.5) and an appropriate Fortran90 compiler capable of compiling Fortran 2008 code. If cmake cannot find precompiled BLAS and LAPACK routines it will download from github and build from source greatly increasing build time and likely resulting in a slower binary. If this occurs, one can manually set the BLAS/LAPACK location using `-DBLAS_LOCATION=...` when running the `cmake` command.
