@@ -88,31 +88,37 @@ add_subdirectory("app")
 set(GLOBAL_OUTPUT_PATH ${CMAKE_BINARY_DIR}/build)
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(EXTERNALS_DIR ${CMAKE_BINARY_DIR}/external)
-ExternalProject_Add(toml-f
-  PREFIX ${EXTERNALS_DIR}
-  GIT_REPOSITORY https://github.com/toml-f/toml-f.git
-  GIT_TAG v0.2.3
-  GIT_SHALLOW ON
-  GIT_PROGRESS true
+# ExternalProject_Add(toml-f
+#   PREFIX ${EXTERNALS_DIR}
+#   GIT_REPOSITORY https://github.com/toml-f/toml-f.git
+#   GIT_TAG v0.2.3
+#   GIT_SHALLOW ON
+#   GIT_PROGRESS true
   
-  UPDATE_COMMAND ""
-  PATCH_COMMAND ""
+#   UPDATE_COMMAND ""
+#   PATCH_COMMAND ""
 
-  SOURCE_DIR "${CMAKE_BINARY_DIR}/toml-f"
-  CMAKE_ARGS -DBuildShared=ON -DBuildExamples=OFF -DCMAKE_INSTALL_PREFIX=${GLOBAL_OUTPUT_PATH}/toml-f
+#   SOURCE_DIR "${CMAKE_BINARY_DIR}/toml-f"
+#   CMAKE_ARGS -DBuildShared=ON -DBuildExamples=OFF -DCMAKE_INSTALL_PREFIX=${GLOBAL_OUTPUT_PATH}/toml-f
 
-  TEST_COMMAND ""
-)
+#   TEST_COMMAND ""
 
-ExternalProject_Add_Step(
-  toml-f CopyToBin
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${GLOBAL_OUTPUT_PATH}/toml-f/lib ${GLOBAL_OUTPUT_PATH}
-  DEPENDEES install
-)
+#   CONFIGURE_COMMAND ${CMAKE_COMMAND} -G${CMAKE_GENERATOR} "${EP_LIBFOO_DIR}/src/libfoo/libfoo"
+# )
 
-set(TOML_F_INCLUDE_DIRS "${EXTERNALS_DIR}/src/toml-f-build/include")
-set(TOML_F_LIBRARIES "${CMAKE_SHARED_LIBRARY_PREFIX}toml-f${CMAKE_SHARED_LIBRARY_SUFFIX}")
-include_directories(${TOML_F_INCLUDE_DIRS})
+# ExternalProject_Add_Step(
+#   toml-f CopyToBin
+#   COMMAND ${CMAKE_COMMAND} -E copy_directory ${GLOBAL_OUTPUT_PATH}/toml-f/lib ${GLOBAL_OUTPUT_PATH}
+#   DEPENDEES install
+# )
+
+set(lib-deps)
+add_subdirectory("subprojects")
+
+
+# set(TOML_F_INCLUDE_DIRS "${EXTERNALS_DIR}/src/toml-f-build/include")
+# set(TOML_F_LIBRARIES "${CMAKE_SHARED_LIBRARY_PREFIX}toml-f${CMAKE_SHARED_LIBRARY_SUFFIX}")
+# include_directories(${TOML_F_INCLUDE_DIRS})
 
 link_directories(${GLOBAL_OUTPUT_PATH})
 #add_dependencies(ferebus toml-f-lib)
@@ -123,10 +129,10 @@ if (EXTERNAL_BLAS)
   if (openblas_FOUND)
     set(LAPACK_LIBRARIES ${openblas_LIBRARIES})
   else()
-    find_package(LAPACK REQUIRED)
+    find_package(lapack REQUIRED)
   endif()
 
-  list(APPEND lib-deps LAPACK)
+  list(APPEND lib-deps lapack)
   #target_link_libraries(ferebus ${LAPACK_LIBRARIES})
 endif()
 
@@ -158,4 +164,4 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 set(FEREBUS_SRCS ${srcs})
 add_executable(ferebus ${FEREBUS_SRCS})
-target_link_libraries(ferebus ${LAPACK_LIBRARIES} ${TOML_F_LIBRARIES})
+target_link_libraries(ferebus ${LAPACK_LIBRARIES} "${lib-deps}")
