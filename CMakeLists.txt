@@ -132,7 +132,7 @@ if (EXTERNAL_BLAS)
     find_package(lapack REQUIRED)
   endif()
 
-  list(APPEND lib-deps lapack)
+  list(APPEND lib-deps ${LAPACK_LIBRARIES})
   #target_link_libraries(ferebus ${LAPACK_LIBRARIES})
 endif()
 
@@ -164,4 +164,4 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 set(FEREBUS_SRCS ${srcs})
 add_executable(ferebus ${FEREBUS_SRCS})
-target_link_libraries(ferebus ${LAPACK_LIBRARIES} "${lib-deps}")
+target_link_libraries(ferebus "${lib-deps}")
